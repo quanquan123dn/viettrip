@@ -1,0 +1,112 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Trip {
+  id            String   @id @default(cuid())
+  title         String
+  startDate     DateTime
+  endDate       DateTime
+  originPlaceId String?
+  originName    String?
+  originLat     Float?
+  originLng     Float?
+  travelMode    String   @default("DRIVE") // DRIVE | MOTORBIKE
+  tripStyle     String   @default("EXPLORE") // CHILL | EXPLORE | FOOD | NATURE | SPIRITUAL
+  status        String   @default("draft") // draft | active | completed
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  days        TripDay[]
+  planReviews PlanReview[]
+  shareLinks  ShareLink[]
+}
+
+model TripDay {
+  id           String   @id @default(cuid())
+  tripId       String
+  dayNumber    Int
+  date         DateTime
+  baseCityName String?
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  trip           Trip            @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  stops          TripStop[]
+  routeSnapshots RouteSnapshot[]
+
+  @@unique([tripId, dayNumber])
+}
+
+model TripStop {
+  id              String   @id @default(cuid())
+  tripDayId       String
+  sortOrder       Int
+  placeId         String?
+  placeName       String
+  address         String?
+  lat             Float
+  lng             Float
+  startTime       String?
+  durationMinutes Int      @default(60)
+  note            String?
+  estimatedCost   Float?
+  category        String?
+  priority        Int      @default(3) // 1-5
+  sourceType      String   @default("manual") // manual | suggested
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  tripDay TripDay @relation(fields: [tripDayId], references: [id], onDelete: Cascade)
+}
+
+model RouteSnapshot {
+  id                   String   @id @default(cuid())
+  tripDayId            String
+  totalDistanceMeters  Int
+  totalDurationSeconds Int
+  encodedPolyline      String?
+  legsJson             String? // JSON string
+  warningsJson         String? // JSON string
+  computedAt           DateTime @default(now())
+
+  tripDay TripDay @relation(fields: [tripDayId], references: [id], onDelete: Cascade)
+}
+
+model PlanReview {
+  id         String   @id @default(cuid())
+  tripId     String
+  reviewJson String // JSON string
+  score      Int
+  createdAt  DateTime @default(now())
+
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+}
+
+model ShareLink {
+  id         String    @id @default(cuid())
+  tripId     String
+  token      String    @unique
+  permission String    @default("view") // view | edit
+  expiresAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+}
+
+model PlaceCache {
+  placeId   String   @id
+  placeJson String // JSON string
+  updatedAt DateTime @updatedAt
+}
+
+model RouteCache {
+  cacheKey     String   @id
+  responseJson String // JSON string
+  updatedAt    DateTime @updatedAt
+}
