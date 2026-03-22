@@ -1,14 +1,20 @@
 import { PrismaClient } from "@prisma/client";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
+import { PrismaNeon } from "@prisma/adapter-neon";
+import { neon } from "@neondatabase/serverless";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
 function createPrismaClient() {
-  const dbUrl = process.env.DATABASE_URL || "file:./dev.db";
-  const dbPath = dbUrl.replace("file:", "").replace("./", "");
-  const adapter = new PrismaBetterSqlite3({ url: dbPath });
+  const connectionString = process.env.POSTGRES_PRISMA_URL || process.env.DATABASE_URL;
+
+  if (!connectionString) {
+    throw new Error("DATABASE_URL or POSTGRES_PRISMA_URL environment variable is not set");
+  }
+
+  const sql = neon(connectionString);
+  const adapter = new PrismaNeon(sql);
   return new PrismaClient({ adapter });
 }
 
