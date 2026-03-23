@@ -20,11 +20,13 @@ interface LeafletMapProps {
 }
 
 // Custom numbered marker icon
+// Colors are pre-inverted because the map container has CSS invert filter
 function createNumberedIcon(num: number, isSelected: boolean) {
   const size = isSelected ? 36 : 30;
-  const bg = isSelected ? "#10b981" : "#27272a";
-  const border = isSelected ? "#34d399" : "#52525b";
-  const shadow = isSelected ? "0 0 12px rgba(16,185,129,0.5)" : "0 2px 6px rgba(0,0,0,0.4)";
+  const bg = isSelected ? "#ef5464" : "#d8d8d5";
+  const border = isSelected ? "#cb2c3c" : "#adada7";
+  const textColor = "black";
+  const shadow = isSelected ? "0 0 12px rgba(239,84,100,0.5)" : "0 2px 6px rgba(255,255,255,0.2)";
 
   return L.divIcon({
     className: "custom-marker",
@@ -33,7 +35,7 @@ function createNumberedIcon(num: number, isSelected: boolean) {
       border-radius:50%;
       background:${bg};
       border:3px solid ${border};
-      color:white;
+      color:${textColor};
       display:flex;align-items:center;justify-content:center;
       font-weight:bold;font-size:${isSelected ? 15 : 13}px;
       box-shadow:${shadow};
@@ -104,14 +106,19 @@ export default function LeafletMap({ stops, encodedPolyline }: LeafletMapProps) 
       <MapContainer
         center={center}
         zoom={stops.length === 0 ? 6 : 12}
-        style={{ width: "100%", height: "100%", background: "#18181b" }}
+        style={{
+          width: "100%",
+          height: "100%",
+          background: "#18181b",
+          filter: "invert(1) hue-rotate(180deg) brightness(0.85) contrast(1.2) saturate(0.3)",
+        }}
         zoomControl={false}
         attributionControl={false}
       >
-        {/* Dark-themed map tiles */}
+        {/* Standard OSM tiles — CSS filter creates dark mode */}
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         />
 
         {/* Fit bounds to stops */}
@@ -119,13 +126,14 @@ export default function LeafletMap({ stops, encodedPolyline }: LeafletMapProps) 
         <FlyToSelected stops={stops} />
 
         {/* Route polyline */}
+        {/* Pre-inverted colors (CSS filter inverts back to emerald) */}
         {polylinePath.length > 1 && (
           <>
             {/* Glow effect */}
             <Polyline
               positions={polylinePath}
               pathOptions={{
-                color: "#10b981",
+                color: "#ef5464",
                 weight: 8,
                 opacity: 0.15,
               }}
@@ -134,7 +142,7 @@ export default function LeafletMap({ stops, encodedPolyline }: LeafletMapProps) 
             <Polyline
               positions={polylinePath}
               pathOptions={{
-                color: "#10b981",
+                color: "#ef5464",
                 weight: 3,
                 opacity: 0.8,
                 dashArray: "8, 6",
@@ -158,7 +166,7 @@ export default function LeafletMap({ stops, encodedPolyline }: LeafletMapProps) 
 
       {/* Attribution overlay */}
       <div className="absolute bottom-1 right-2 text-[9px] text-zinc-600 z-[1000]">
-        © OpenStreetMap · CARTO
+        © OpenStreetMap
       </div>
 
       {/* Empty state */}
