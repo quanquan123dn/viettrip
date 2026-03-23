@@ -1,16 +1,23 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
-import { Pool } from "@neondatabase/serverless";
+import { Pool, neonConfig } from "@neondatabase/serverless";
+import ws from "ws";
+
+// Enable WebSocket for non-Edge environments
+neonConfig.webSocketConstructor = ws;
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
 function createPrismaClient() {
-  const connectionString = process.env.POSTGRES_PRISMA_URL || process.env.DATABASE_URL;
+  const connectionString =
+    process.env.POSTGRES_URL ||
+    process.env.POSTGRES_PRISMA_URL ||
+    process.env.DATABASE_URL;
 
   if (!connectionString) {
-    throw new Error("DATABASE_URL or POSTGRES_PRISMA_URL environment variable is not set");
+    throw new Error("No database connection string found. Set POSTGRES_URL, POSTGRES_PRISMA_URL, or DATABASE_URL.");
   }
 
   const pool = new Pool({ connectionString });
