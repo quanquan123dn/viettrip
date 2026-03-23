@@ -6,19 +6,29 @@ export const dynamic = "force-dynamic";
 
 // GET /api/trips — list all trips
 export async function GET() {
-  const trips = await prisma.trip.findMany({
-    orderBy: { createdAt: "desc" },
-    include: {
-      days: {
-        orderBy: { dayNumber: "asc" },
-        include: {
-          stops: { orderBy: { sortOrder: "asc" } },
+  try {
+    const trips = await prisma.trip.findMany({
+      orderBy: { createdAt: "desc" },
+      include: {
+        days: {
+          orderBy: { dayNumber: "asc" },
+          include: {
+            stops: { orderBy: { sortOrder: "asc" } },
+          },
         },
       },
-    },
-  });
+    });
 
-  return NextResponse.json(trips);
+    return NextResponse.json(trips);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    const stack = error instanceof Error ? error.stack : undefined;
+    console.error("GET /api/trips error:", message, stack);
+    return NextResponse.json(
+      { error: message, stack: stack?.split("\n").slice(0, 5) },
+      { status: 500 }
+    );
+  }
 }
 
 // POST /api/trips — create trip + auto-generate days
