@@ -261,7 +261,7 @@ function PlaceholderMap({ stops }: { stops: Stop[] }) {
     ctx.font = "10px sans-serif";
     ctx.textAlign = "right";
     ctx.textBaseline = "bottom";
-    ctx.fillText("Preview mode — add Google Maps key for full map", w - 10, h - 10);
+    ctx.fillText("Chế độ xem trước — thêm Google Maps API key để xem bản đồ đầy đủ", w - 10, h - 10);
   }, [stops, selectedStopId]);
 
   useEffect(() => {

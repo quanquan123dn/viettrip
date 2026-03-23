@@ -52,7 +52,7 @@ export function RouteSummary({
           </div>
         )}
         <p className="text-xs text-zinc-500 text-center">
-          Thêm ít nhất 2 điểm để tính route
+          Thêm ít nhất 2 điểm để tính lộ trình
         </p>
       </div>
     );
@@ -98,26 +98,26 @@ export function RouteSummary({
         <div className="px-4 py-3">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs text-zinc-400 uppercase tracking-wider font-semibold">
-              Tổng quan route
+              Tổng quan lộ trình
             </span>
             <button
               onClick={onComputeRoute}
               disabled={isLoading}
               className="text-xs text-emerald-400 hover:text-emerald-300 transition-colors"
             >
-              {isLoading ? "Đang tính..." : "↻ Tính lại"}
+              {isLoading ? "Đang tính..." : "↻ Cập nhật"}
             </button>
           </div>
 
           <div className={`grid ${totalCost > 0 ? 'grid-cols-3' : 'grid-cols-2'} gap-2`}>
             <div className="bg-zinc-800/50 rounded-lg p-2.5">
-              <p className="text-xs text-zinc-500 mb-0.5">Quãng đường</p>
+              <p className="text-xs text-zinc-500 mb-0.5">Khoảng cách</p>
               <p className="text-sm font-semibold text-white">
                 🛣️ {formatDistance(route.totalDistanceMeters)}
               </p>
             </div>
             <div className="bg-zinc-800/50 rounded-lg p-2.5">
-              <p className="text-xs text-zinc-500 mb-0.5">Thời gian lái</p>
+              <p className="text-xs text-zinc-500 mb-0.5">Di chuyển</p>
               <p className="text-sm font-semibold text-white">
                 🕐 {formatDuration(route.totalDurationSeconds)}
               </p>
@@ -166,10 +166,10 @@ export function RouteSummary({
           >
             {isLoading ? (
               <span className="flex items-center justify-center gap-2">
-                <span className="animate-spin">⏳</span> Đang tính route...
+                <span className="animate-spin">⏳</span> Đang tính lộ trình...
               </span>
             ) : (
-              "🗺️ Tính route cho ngày này"
+              "🗺️ Tính lộ trình cho ngày này"
             )}
           </button>
         </div>
