@@ -7,19 +7,22 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function createPrismaClient() {
-  let connectionString =
-    process.env.POSTGRES_URL ||
+  const connectionString =
     process.env.POSTGRES_PRISMA_URL ||
+    process.env.POSTGRES_URL ||
     process.env.DATABASE_URL;
 
   if (!connectionString) {
-    throw new Error("No database connection string found.");
+    throw new Error("No database URL found");
   }
 
-  // Remove channel_binding parameter which can cause issues in serverless
-  connectionString = connectionString.replace(/[&?]channel_binding=[^&]*/g, "");
+  // Clean up connection string for serverless compatibility
+  const cleanUrl = connectionString
+    .replace(/channel_binding=[^&]*/g, "")
+    .replace(/&&/g, "&")
+    .replace(/\?&/, "?");
 
-  const pool = new Pool({ connectionString });
+  const pool = new Pool({ connectionString: cleanUrl });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const adapter = new PrismaNeon(pool as any);
   return new PrismaClient({ adapter });
