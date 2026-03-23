@@ -1,0 +1,177 @@
+"use client";
+
+import { useEffect, useRef, useMemo } from "react";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import { MapContainer, TileLayer, Marker, Polyline, useMap } from "react-leaflet";
+import { usePlannerStore } from "@/store/plannerStore";
+
+interface Stop {
+  id: string;
+  placeName: string;
+  lat: number;
+  lng: number;
+  sortOrder: number;
+}
+
+interface LeafletMapProps {
+  stops: Stop[];
+  encodedPolyline?: string;
+}
+
+// Custom numbered marker icon
+function createNumberedIcon(num: number, isSelected: boolean) {
+  const size = isSelected ? 36 : 30;
+  const bg = isSelected ? "#10b981" : "#27272a";
+  const border = isSelected ? "#34d399" : "#52525b";
+  const shadow = isSelected ? "0 0 12px rgba(16,185,129,0.5)" : "0 2px 6px rgba(0,0,0,0.4)";
+
+  return L.divIcon({
+    className: "custom-marker",
+    html: `<div style="
+      width:${size}px;height:${size}px;
+      border-radius:50%;
+      background:${bg};
+      border:3px solid ${border};
+      color:white;
+      display:flex;align-items:center;justify-content:center;
+      font-weight:bold;font-size:${isSelected ? 15 : 13}px;
+      box-shadow:${shadow};
+      transition:all 0.2s;
+      cursor:pointer;
+    ">${num}</div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+  });
+}
+
+// Component to auto-fit bounds when stops change
+function FitBounds({ stops }: { stops: Stop[] }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (stops.length === 0) return;
+
+    if (stops.length === 1) {
+      map.setView([stops[0].lat, stops[0].lng], 14);
+      return;
+    }
+
+    const bounds = L.latLngBounds(stops.map((s) => [s.lat, s.lng]));
+    map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+  }, [map, stops]);
+
+  return null;
+}
+
+// Component to fly to selected stop
+function FlyToSelected({ stops }: { stops: Stop[] }) {
+  const map = useMap();
+  const { selectedStopId } = usePlannerStore();
+
+  useEffect(() => {
+    if (!selectedStopId) return;
+    const stop = stops.find((s) => s.id === selectedStopId);
+    if (stop) {
+      map.flyTo([stop.lat, stop.lng], Math.max(map.getZoom(), 14), {
+        duration: 0.5,
+      });
+    }
+  }, [map, selectedStopId, stops]);
+
+  return null;
+}
+
+export default function LeafletMap({ stops, encodedPolyline }: LeafletMapProps) {
+  const { selectedStopId, setSelectedStopId } = usePlannerStore();
+
+  // Build polyline path from stops
+  const polylinePath = useMemo(() => {
+    if (stops.length < 2) return [];
+    return stops.map((s) => [s.lat, s.lng] as [number, number]);
+  }, [stops]);
+
+  // Default center (Ho Chi Minh City)
+  const center = useMemo(() => {
+    if (stops.length === 0) return [10.762622, 106.660172] as [number, number];
+    const avgLat = stops.reduce((s, st) => s + st.lat, 0) / stops.length;
+    const avgLng = stops.reduce((s, st) => s + st.lng, 0) / stops.length;
+    return [avgLat, avgLng] as [number, number];
+  }, [stops]);
+
+  return (
+    <div className="w-full h-full relative">
+      <MapContainer
+        center={center}
+        zoom={stops.length === 0 ? 6 : 12}
+        style={{ width: "100%", height: "100%", background: "#18181b" }}
+        zoomControl={false}
+        attributionControl={false}
+      >
+        {/* Dark-themed map tiles */}
+        <TileLayer
+          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
+        />
+
+        {/* Fit bounds to stops */}
+        <FitBounds stops={stops} />
+        <FlyToSelected stops={stops} />
+
+        {/* Route polyline */}
+        {polylinePath.length > 1 && (
+          <>
+            {/* Glow effect */}
+            <Polyline
+              positions={polylinePath}
+              pathOptions={{
+                color: "#10b981",
+                weight: 8,
+                opacity: 0.15,
+              }}
+            />
+            {/* Main line */}
+            <Polyline
+              positions={polylinePath}
+              pathOptions={{
+                color: "#10b981",
+                weight: 3,
+                opacity: 0.8,
+                dashArray: "8, 6",
+              }}
+            />
+          </>
+        )}
+
+        {/* Markers */}
+        {stops.map((stop, index) => (
+          <Marker
+            key={stop.id}
+            position={[stop.lat, stop.lng]}
+            icon={createNumberedIcon(index + 1, selectedStopId === stop.id)}
+            eventHandlers={{
+              click: () => setSelectedStopId(stop.id),
+            }}
+          />
+        ))}
+      </MapContainer>
+
+      {/* Attribution overlay */}
+      <div className="absolute bottom-1 right-2 text-[9px] text-zinc-600 z-[1000]">
+        © OpenStreetMap · CARTO
+      </div>
+
+      {/* Empty state */}
+      {stops.length === 0 && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[1000]">
+          <div className="text-center">
+            <span className="text-4xl block mb-2">🗺️</span>
+            <p className="text-sm text-zinc-500">
+              Thêm điểm dừng để xem trên bản đồ
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
